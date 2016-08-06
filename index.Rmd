@@ -1,0 +1,94 @@
+---
+title       : Gaining insights from Canadian Historical Exchange Rates
+subtitle    : Data Products Project Pitch
+author      : Graeme
+job         : 
+framework   : io2012        # {io2012, html5slides, shower, dzslides, ...}
+highlighter : highlight.js  # {highlight.js, prettify, highlight}
+hitheme     : tomorrow      # 
+widgets     : []            # {mathjax, quiz, bootstrap}
+mode        : selfcontained # {standalone, draft}
+knit        : slidify::knit2slides
+---
+
+## Description
+
+This app displays the past 2.5 years of exchange rates to the Canadian dollar from the Euro, Great Britain Pound and US dollar as shown here.
+
+```{r results='hide', message=FALSE, warning=FALSE, echo=FALSE}
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+library(forecast)
+
+```
+```{r message=FALSE, warning=FALSE, echo=FALSE, fig.width=14, fig.height=6}
+rates <- read.table("ExchangeRates.txt", header = TRUE, sep = "\t", stringsAsFactors = F)
+rates$DateKey <- ymd(rates$DateKey)
+rates$Currency <- factor(rates$Currency)
+
+g <- ggplot(rates, aes(DateKey, RateToCAD, colour = Currency)) + geom_line(data = rates, mapping = aes(group=Currency), size=2) + xlab("")
+g  
+```
+
+
+--- .class #id 
+
+## Trends
+
+An option to display a trendline is available to the user to get a better visual of what the trend over the last 2.5 years was. This helps the user get a better idea of the long term trend of the exchange rate as shown here.
+
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, fig.width=14, fig.height=6}
+
+g <- ggplot(rates, aes(DateKey, RateToCAD, colour = Currency)) + geom_line(data = rates, mapping = aes(group=Currency), size=2) + xlab("")
+
+g <- g + geom_smooth(method = "lm", se=F, aes(group = Currency), colour ="red")
+
+g  
+```
+
+--- .class #id
+
+## Moving Average
+
+A moving average option is also included. The user can change the window of the moving average from 2 months to 7 months. This allows the user to get a sense of moving trends rather than the overall trend. A 6 month moving average trend is shown here.
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, fig.width=14, fig.height=6}
+  USD_ma <- ma(rates%>%filter(Currency=="USD")%>%select(RateToCAD), order=6)
+  EUR_ma <- ma(rates%>%filter(Currency=="EUR")%>%select(RateToCAD), order=6)
+  GBP_ma <- ma(rates%>%filter(Currency=="GBP")%>%select(RateToCAD), order=6)
+  dates <- rates%>%filter(Currency=="USD")%>% select(DateKey)
+  ma_d <- rbind(data.frame(DateKey = dates, RateToCAD = USD_ma, Currency = "USD"),data.frame(DateKey = dates, RateToCAD = EUR_ma, Currency = "EUR"),data.frame(DateKey = dates, RateToCAD = GBP_ma, Currency = "GBP"))
+  g <- ggplot(rates, aes(DateKey, RateToCAD, colour = Currency)) + geom_line(data = rates, mapping = aes(group=Currency), size=2) + xlab("")
+  
+  g <- g + geom_line(data = ma_d, aes(group=Currency), color = rgb(.4,.4,.4,1), size=1) 
+
+  g
+```
+
+
+--- .class #id
+
+## Forecast
+
+A 6 month forecast option is also available to the user. This allows the user to view what a very basic 6 month forecast for each exchange rate looks like. This might help the user decide if it a good time to buy or sell a specific currency. (Note that the forecast is very basic and should not be used)
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, fig.width=14, fig.height=6}
+  USD_ts<- ts((rates%>%filter(Currency=="USD")%>%select(RateToCAD))$RateToCAD, frequency = 12, start = c(2013,12))
+      usd_f <- hw(USD_ts, seasonal = "additive", damped = TRUE, h=6, initial = "optimal")
+      GBP_ts<- ts((rates%>%filter(Currency=="GBP")%>%select(RateToCAD))$RateToCAD, frequency = 12, start = c(2013,12))
+      gbp_f <- hw(GBP_ts, seasonal = "additive", damped = TRUE, h=6, initial = "optimal")
+      EUR_ts<- ts((rates%>%filter(Currency=="EUR")%>%select(RateToCAD))$RateToCAD, frequency = 12, start = c(2013,12))
+      eur_f <- hw(EUR_ts, seasonal = "additive", damped = TRUE, h=6, initial = "optimal")
+      
+      usd_df_f <- data.frame(date=as.Date(as.yearmon(time(usd_f$mean))), Y=as.matrix(usd_f$mean))
+      gbp_df_f <- data.frame(date=as.Date(as.yearmon(time(gbp_f$mean))), Y=as.matrix(gbp_f$mean))
+      eur_df_f <- data.frame(date=as.Date(as.yearmon(time(eur_f$mean))), Y=as.matrix(eur_f$mean))
+        g <- ggplot(rates, aes(DateKey, RateToCAD, colour = Currency)) + geom_line(data = rates, mapping = aes(group=Currency), size=2) + xlab("")
+  
+      g <- g + geom_smooth(aes(x=date, y=Y), colour='blue', data=usd_df_f, stat='identity')
+      g <- g + geom_smooth(aes(x=date, y=Y), colour='green', data=gbp_df_f, stat='identity')
+      g <- g + geom_smooth(aes(x=date, y=Y), colour='red', data=eur_df_f, stat='identity')
+  g
+```
