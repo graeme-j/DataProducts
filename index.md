@@ -2,7 +2,6 @@
 title       : Gaining insights from Canadian Historical Exchange Rates
 subtitle    : Data Products Project Pitch
 author      : Graeme
-job         : 
 framework   : io2012        # {io2012, html5slides, shower, dzslides, ...}
 highlighter : highlight.js  # {highlight.js, prettify, highlight}
 hitheme     : tomorrow      # 
@@ -13,7 +12,7 @@ knit        : slidify::knit2slides
 
 ## Description
 
-This app displays the past 2.5 years of exchange rates to the Canadian dollar from the Euro, Great Britain Pound and US dollar as shown here.
+This app displays the past 2.5 years of exchange rates to the Canadian dollar from the Euro, Great Britain Pound and US dollar as shown here. R Markdown code showing calculations can be found on [Github] (https://github.com/graeme-j/DataProducts/tree/gh-pages)
 
 
 ![plot of chunk unnamed-chunk-2](assets/fig/unnamed-chunk-2-1.png)
